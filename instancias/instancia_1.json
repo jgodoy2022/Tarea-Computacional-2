@@ -3,7 +3,7 @@
   "num_clients": 15,
   "num_days": 3,
   "num_vehicles": 3,
-  "capacity": 50,
+  "capacity": 100,
   "depot": 0,
   "nodes": [
     0,
@@ -169,83 +169,83 @@
   "time_windows": {
     "0": {
       "tw_start": 0,
-      "tw_end": 1236,
+      "tw_end": 2000,
       "service_time": 0
     },
     "1": {
-      "tw_start": 912,
-      "tw_end": 967,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "2": {
-      "tw_start": 825,
-      "tw_end": 870,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "3": {
-      "tw_start": 65,
-      "tw_end": 146,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "4": {
-      "tw_start": 727,
-      "tw_end": 782,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "5": {
-      "tw_start": 15,
-      "tw_end": 67,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "6": {
-      "tw_start": 621,
-      "tw_end": 702,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "7": {
-      "tw_start": 170,
-      "tw_end": 225,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "8": {
-      "tw_start": 255,
-      "tw_end": 324,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "9": {
-      "tw_start": 534,
-      "tw_end": 605,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "10": {
-      "tw_start": 357,
-      "tw_end": 410,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "11": {
-      "tw_start": 448,
-      "tw_end": 505,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "12": {
-      "tw_start": 652,
-      "tw_end": 721,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "13": {
-      "tw_start": 30,
-      "tw_end": 92,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "14": {
-      "tw_start": 567,
-      "tw_end": 620,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     },
     "15": {
-      "tw_start": 384,
-      "tw_end": 429,
-      "service_time": 90
+      "tw_start": 0,
+      "tw_end": 1500,
+      "service_time": 30
     }
   }
 }

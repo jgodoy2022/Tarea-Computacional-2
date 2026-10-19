@@ -3,7 +3,7 @@
   "num_clients": 15,
   "num_days": 3,
   "num_vehicles": 3,
-  "capacity": 40,
+  "capacity": 80,
   "depot": 0,
   "nodes": [
     0,
@@ -169,82 +169,82 @@
   "time_windows": {
     "0": {
       "tw_start": 0,
-      "tw_end": 230,
+      "tw_end": 2000,
       "service_time": 0
     },
     "1": {
-      "tw_start": 161,
-      "tw_end": 171,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "2": {
-      "tw_start": 50,
-      "tw_end": 60,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "3": {
-      "tw_start": 116,
-      "tw_end": 126,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "4": {
-      "tw_start": 149,
-      "tw_end": 159,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "5": {
-      "tw_start": 34,
-      "tw_end": 44,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "6": {
-      "tw_start": 99,
-      "tw_end": 109,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "7": {
-      "tw_start": 81,
-      "tw_end": 91,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "8": {
-      "tw_start": 95,
-      "tw_end": 105,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "9": {
-      "tw_start": 97,
-      "tw_end": 107,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "10": {
-      "tw_start": 124,
-      "tw_end": 134,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "11": {
-      "tw_start": 67,
-      "tw_end": 77,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "12": {
-      "tw_start": 63,
-      "tw_end": 73,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "13": {
-      "tw_start": 159,
-      "tw_end": 169,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "14": {
-      "tw_start": 32,
-      "tw_end": 42,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     },
     "15": {
-      "tw_start": 61,
-      "tw_end": 71,
+      "tw_start": 0,
+      "tw_end": 1500,
       "service_time": 10
     }
   }
