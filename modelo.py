@@ -42,11 +42,11 @@ def crear_modelo_convrp(data):
 
     T = {}
     for d in dias:
-        for i in nodos:
-            lb_val = tw[i]['tw_start']
-            # Permitir que el depósito reciba a los vehículos al final de la jornada sin sobre-restringir
-            ub_val = tw[i]['tw_end'] if i != depot else 2000
-            T[i, d] = model.addVar(vtype=GRB.CONTINUOUS, lb=lb_val, ub=ub_val, name=f"T_{i}_d{d}")
+        for k in vehiculos:
+            for i in nodos:
+                lb_val = tw[i]['tw_start']
+                ub_val = tw[i]['tw_end']
+                T[i, d, k] = model.addVar(vtype=GRB.CONTINUOUS, lb=lb_val, ub=ub_val, name=f"T_{i}_d{d}_k{k}")
 
     model.update()
 
@@ -64,7 +64,7 @@ def crear_modelo_convrp(data):
     for d in dias:
         for k in vehiculos:
             model.addConstr(
-                gp.quicksum(demands.get(i, [0,0,0])[d-1] * X[i, j, d, k] 
+                gp.quicksum(demands.get(i, [0,0,0])[d-1] * X[j, i, d, k] 
                             for i in clientes for j in nodos if i != j) <= Q,
                 name=f"Capacidad_d{d}_k{k}"
             )
@@ -82,15 +82,13 @@ def crear_modelo_convrp(data):
 
     # C. Conservación de flujo en los clientes
     for d in dias:
-        for j in clientes:
-            demanda_cliente_dia = demands.get(j, [0,0,0])[d-1]
-            if demanda_cliente_dia > 0: # SOLO si el cliente debe ser visitado ese día
-                for k in vehiculos:
-                    model.addConstr(
-                        gp.quicksum(X[i, j, d, k] for i in nodos if i != j) == 
-                        gp.quicksum(X[j, i, d, k] for i in nodos if i != j),
-                        name=f"Flujo_{j}_d{d}_k{k}"
-                    )
+        for k in vehiculos:
+            for j in clientes:
+                model.addConstr(
+                    gp.quicksum(X[i, j, d, k] for i in nodos if i != j) == 
+                    gp.quicksum(X[j, i, d, k] for i in nodos if i != j),
+                    name=f"Flujo_{j}_d{d}_k{k}"
+                )
 
     # D. Salida y retorno del Depósito (5)
     for d in dias:
@@ -106,14 +104,14 @@ def crear_modelo_convrp(data):
             )
 
     # E. Ventanas de Tiempo y Seguimiento con Big-M adaptado al horizonte del depósito
-    BigM = 10000
+    BigM = tw[depot]['tw_end'] * 2 
     for d in dias:
         for k in vehiculos:
             for i in nodos:
-                for j in nodos:
+                for j in clientes:
                     if i != j:
                         model.addConstr(
-                            T[i, d] + tw[i]['service_time'] + dist[i, j] - T[j, d] <= BigM * (1 - X[i, j, d, k]),
+                            T[i, d, k] + tw[i]['service_time'] + dist[i, j] - T[j, d, k] <= BigM * (1 - X[i, j, d, k]),
                             name=f"BigM_{i}_{j}_d{d}_k{k}"
                         )
 
@@ -143,9 +141,3 @@ if __name__ == "__main__":
         print(f"Gap final: {modelo.MIPGap * 100:.2f}%")
     else:
         print(f"El modelo no encontró una solución óptima en este estado (Código de estado: {modelo.Status})")
-
-    if modelo.Status == GRB.INFEASIBLE:
-        print("\n--- DIAGNÓSTICO DE INFACTIBILIDAD ---")
-        modelo.computeIIS()
-        modelo.write("conflicto.ilp")
-        print("Se ha generado el archivo 'conflicto.ilp'. Ábrelo para ver las restricciones en conflicto.")

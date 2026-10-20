@@ -3,7 +3,7 @@
   "num_clients": 15,
   "num_days": 3,
   "num_vehicles": 3,
-  "capacity": 100,
+  "capacity": 180,
   "depot": 0,
   "nodes": [
     0,
