@@ -3,6 +3,8 @@ import math
 import gurobipy as gp
 from gurobipy import GRB
 
+RET = "ret" # Nodo de retorno al deposito (n + 1)
+
 def cargar_instancia(ruta_json):
     with open(ruta_json, 'r') as f:
         data = json.load(f)
@@ -11,109 +13,107 @@ def cargar_instancia(ruta_json):
 def crear_modelo_convrp(data):
 
     model = gp.Model("ConVRP_SLA_Reducido")
-    
-    # Extraer conjuntos y datos básicos
-    clientes = [n for n in data['nodes'] if n != data['depot']]
+
     depot = data['depot']
-    nodos = data['nodes']
+    clientes = [n for n in data['nodes'] if n != depot]
     dias = list(range(1, data['num_days'] + 1))
-    vehiculos = list(range(1, data['num_vehicles'] + 1))
-    
+    rutas = list(range(1, data['num_vehicles'] + 1))
+
     demands = {int(k): v for k, v in data['demands'].items()}
     tw = {int(k): v for k, v in data['time_windows'].items()}
     coords = {int(k): v for k, v in data['coordinates'].items()}
     Q = data['capacity']
-    
-    # Calcular matriz de distancias euclidianas t_ij
-    dist = {}
-    for i in nodos:
-        for j in nodos:
-            dist[(i, j)] = math.hypot(coords[i][0] - coords[j][0], coords[i][1] - coords[j][1])
+    aW, bW = tw[depot]['tw_start'], tw[depot]['tw_end']
 
-    #1. VARIABLES DE DECISIÓN
-    
+    q = {(i, d): demands.get(i, [0] * len(dias))[d - 1] for i in clientes for d in dias}
+    st = {i: tw[i].get('service_time', 0) for i in clientes}
+    st[depot] = 0
+
+    # Nodos con pedido cada día (preprocesamiento de arcos)
+    ped = {d: [i for i in clientes if q[i, d] > 0] for d in dias}
+    # Nodos con ventana propia (NTW)
+    NTW = {i for i in clientes
+           if (tw[i]['tw_start'], tw[i]['tw_end']) != (aW, bW)}
+
+    def td(i, j):
+        i = depot if i == RET else i
+        j = depot if j == RET else j
+        return math.hypot(coords[i][0] - coords[j][0], coords[i][1] - coords[j][1])
+    tt = td  # velocidad unitaria
+
+    # ---------------- VARIABLES ----------------
+    Z = {(i, r): model.addVar(vtype=GRB.BINARY, name=f"Z_{i}_r{r}")
+         for i in clientes for r in rutas}
+
     X = {}
     for d in dias:
-        for k in vehiculos:
-            for i in nodos:
-                for j in nodos:
+        P = ped[d]
+        for r in rutas:
+            for i in P:
+                for j in P:
                     if i != j:
-                        X[i, j, d, k] = model.addVar(vtype=GRB.BINARY, name=f"X_{i}_{j}_d{d}_k{k}")
+                        X[i, j, d, r] = model.addVar(vtype=GRB.BINARY)
+                X[depot, i, d, r] = model.addVar(vtype=GRB.BINARY)
+                X[i, RET, d, r] = model.addVar(vtype=GRB.BINARY)
+            X[depot, RET, d, r] = model.addVar(vtype=GRB.BINARY)  # ruta no sale
 
-    T = {}
+    W = {}
     for d in dias:
-        for k in vehiculos:
-            for i in nodos:
-                lb_val = tw[i]['tw_start']
-                ub_val = tw[i]['tw_end']
-                T[i, d, k] = model.addVar(vtype=GRB.CONTINUOUS, lb=lb_val, ub=ub_val, name=f"T_{i}_d{d}_k{k}")
-
+        for i in ped[d]:
+            if i in NTW:
+                W[i, d] = model.addVar(lb=tw[i]['tw_start'], ub=tw[i]['tw_end'])  # (8)
+            else:
+                W[i, d] = model.addVar(lb=0, ub=bW)
+    dW = {r: model.addVar(lb=aW, ub=bW, name=f"dW_{r}") for r in rutas}          # (11)
+    rW = {(r, d): model.addVar(lb=0, ub=bW, name=f"rW_{r}_{d}")                   # (12)
+          for r in rutas for d in dias}
     model.update()
 
-    # 2. FUNCIÓN OBJETIVO (1): Minimizar distancia total
- 
-    obj = gp.quicksum(dist[i, j] * X[i, j, d, k] 
-                      for d in dias 
-                      for k in vehiculos 
-                      for i in nodos for j in nodos if i != j)
-    model.setObjective(obj, GRB.MINIMIZE)
+    # ---------------- OBJETIVO (1) ----------------
+    model.setObjective(
+        gp.quicksum(td(i, j) * v for (i, j, d, r), v in X.items()), GRB.MINIMIZE)
 
-    # 3. RESTRICCIONES PRINCIPALES
-    
-    # A. Restricción de Capacidad del Vehículo (14)
-    for d in dias:
-        for k in vehiculos:
-            model.addConstr(
-                gp.quicksum(demands.get(i, [0,0,0])[d-1] * X[j, i, d, k] 
-                            for i in clientes for j in nodos if i != j) <= Q,
-                name=f"Capacidad_d{d}_k{k}"
-            )
+    # ---------------- RESTRICCIONES ----------------
+    # (2) cada cliente en una sola ruta
+    for i in clientes:
+        model.addConstr(gp.quicksum(Z[i, r] for r in rutas) == 1)
 
-    # B. Restricciones de Visita y Flujo / Grado (3)-(4)
     for d in dias:
-        for i in clientes:
-            demanda_cliente_dia = demands.get(i, [0,0,0])[d-1]
-            requiere_visita = 1 if demanda_cliente_dia > 0 else 0
-            
-            model.addConstr(
-                gp.quicksum(X[j, i, d, k] for k in vehiculos for j in nodos if j != i) == requiere_visita,
-                name=f"Visita_Entrada_{i}_d{d}"
-            )
-
-    # C. Conservación de flujo en los clientes
-    for d in dias:
-        for k in vehiculos:
-            for j in clientes:
+        P = ped[d]
+        for r in rutas:
+            for i in P:
+                # (3) entrada
                 model.addConstr(
-                    gp.quicksum(X[i, j, d, k] for i in nodos if i != j) == 
-                    gp.quicksum(X[j, i, d, k] for i in nodos if i != j),
-                    name=f"Flujo_{j}_d{d}_k{k}"
-                )
-
-    # D. Salida y retorno del Depósito (5)
-    for d in dias:
-        for k in vehiculos:
+                    gp.quicksum(X[j, i, d, r] for j in [depot] + P if j != i) == Z[i, r])
+                # (4) salida
+                model.addConstr(
+                    gp.quicksum(X[i, j, d, r] for j in P + [RET] if j != i) == Z[i, r])
+            # (5) sale exactamente una vez (arco ficticio si no opera) y retorna una vez
             model.addConstr(
-                gp.quicksum(X[depot, j, d, k] for j in clientes) == 
-                gp.quicksum(X[j, depot, d, k] for j in clientes),
-                name=f"Deposito_Balance_d{d}_k{k}"
-            )
+                gp.quicksum(X[depot, j, d, r] for j in P + [RET]) == 1)
             model.addConstr(
-                gp.quicksum(X[depot, j, d, k] for j in clientes) <= 1,
-                name=f"Max_Salida_Deposito_d{d}_k{k}"
-            )
+                gp.quicksum(X[i, RET, d, r] for i in P + [depot]) == 1)
 
-    # E. Ventanas de Tiempo y Seguimiento con Big-M adaptado al horizonte del depósito
-    BigM = tw[depot]['tw_end'] * 2 
-    for d in dias:
-        for k in vehiculos:
-            for i in nodos:
-                for j in clientes:
+            # (7) tiempos entre clientes
+            for i in P:
+                for j in P:
                     if i != j:
+                        M = bW + st[i] + tt(i, j)
                         model.addConstr(
-                            T[i, d, k] + tw[i]['service_time'] + dist[i, j] - T[j, d, k] <= BigM * (1 - X[i, j, d, k]),
-                            name=f"BigM_{i}_{j}_d{d}_k{k}"
-                        )
+                            W[i, d] + st[i] + tt(i, j) <= W[j, d] + M * (1 - X[i, j, d, r]))
+            for j in P:
+                # (9) salida del depósito
+                M = bW + tt(depot, j)
+                model.addConstr(dW[r] + tt(depot, j) <= W[j, d] + M * (1 - X[depot, j, d, r]))
+                # (10) retorno al depósito
+                M = bW + st[j] + tt(j, depot)
+                model.addConstr(
+                    W[j, d] + st[j] + tt(j, depot) <= rW[r, d] + M * (1 - X[j, RET, d, r]))
+
+    # (14) capacidad vía Z
+    for r in rutas:
+        for d in dias:
+            model.addConstr(gp.quicksum(q[i, d] * Z[i, r] for i in ped[d]) <= Q)
 
     model.update()
     return model
