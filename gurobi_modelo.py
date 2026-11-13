@@ -69,7 +69,7 @@ def crear_modelo_convrp(data, log_filename=None):
             W[i, d] = model.addVar(lb=lb_v, ub=ub_v, name=f"W_{i}_d{d}")
 
     dW = {r: model.addVar(lb=aW, ub=bW, name=f"dW_{r}") for r in rutas}
-    rW = {(r, d): model.addVar(lb=0, ub=bW, name=f"rW_{r}_{d}") for r in rutas for d in dias}
+    rW = {(r, d): model.addVar(lb=aW, ub=bW, name=f"rW_{r}_{d}") for r in rutas for d in dias}  # (12)
     model.update()
 
     # ---------------- OBJETIVO (1) ----------------

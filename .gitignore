@@ -3,7 +3,6 @@ __pycache__/
 .ipynb_checkpoints/
 .venv/
 env/
-*.log
 *.prm
 *.lic
 *.ilp
