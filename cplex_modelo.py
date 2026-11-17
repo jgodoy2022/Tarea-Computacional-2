@@ -138,9 +138,6 @@ def resolver_cplex(data, es_relajado=False, log_filename=None):
     modelo = crear_modelo_convrp(data)
 
     # Configuración del solver
-    modelo.parameters.threads = 1
-    modelo.parameters.timelimit = 600
-
     if es_relajado:
         # Relajación lineal continua: clonar y convertir binarias a continuas
         modelo_usado = modelo.clone()
@@ -149,14 +146,15 @@ def resolver_cplex(data, es_relajado=False, log_filename=None):
                 modelo_usado.change_var_types([var], ['C'])
     else:
         modelo_usado = modelo
+        
+    modelo_usado.parameters.threads = 1
+    modelo_usado.parameters.timelimit = 600
 
     # Redirigir log a archivo si se especifica
     if log_filename:
         os.makedirs(os.path.dirname(log_filename), exist_ok=True)
-        log_file = open(log_filename, 'w')
-        modelo_usado.set_log_output(log_file)
-        sol = modelo_usado.solve(log_output=False)
-        log_file.close()
+        with open(log_filename, 'w', encoding='utf-8') as log_file:
+            sol = modelo_usado.solve(log_output=log_file)
     else:
         sol = modelo_usado.solve(log_output=True)
 
